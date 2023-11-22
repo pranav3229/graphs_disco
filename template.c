@@ -253,10 +253,56 @@ int find_vital_train_tracks(Graph* g) {
  * upgrades[i] should be 1 if railway station i gets a maintenance depot
  * If it is not possible to upgrade, then return "-1" in the entire array
 */
+
+// Helper function to check if it is possible to color the graph
+bool is_colorable(Graph* g, int v, int color, int* colors) {
+    for (int i = 0; i < g->n; i++) {
+        if (g->adj[v][i] && colors[i] == color) {
+            return false;
+        }
+    }
+    return true;
+}
+
 int* upgrade_railway_stations(Graph* g) {
     int* upgrades = calloc(g->n, sizeof(int)); // Do not modify
     
     // Code goes here
+    int* colors = (int*)malloc(g->n * sizeof(int));
+
+    // Initialize colors to -1 (not colored)
+    for (int i = 0; i < g->n; i++) {
+        colors[i] = -1;
+    }
+
+    // Color the first station with a restaurant (color 0)
+    colors[0] = 0;
+
+    // Assign colors to the remaining stations
+    for (int i = 1; i < g->n; i++) {
+        for (int c = 0; c <= 1; c++) {
+            if (is_colorable(g, i, c, colors)) {
+                colors[i] = c;
+                break;
+            }
+        }
+        // If a color cannot be assigned, set all elements of upgrades to -1
+        if (colors[i] == -1) {
+            for (int j = 0; j < g->n; j++) {
+                upgrades[j] = -1;
+            }
+            free(upgrades);
+            free(colors);
+            return upgrades;
+        }
+    }
+
+    // Assign upgrades based on colors
+    for (int i = 0; i < g->n; i++) {
+        upgrades[i] = colors[i];
+    }
+
+    free(colors);
 
     return upgrades; // Do not modify
 }
@@ -267,7 +313,53 @@ int* upgrade_railway_stations(Graph* g) {
  * city_x is the index of X, city_y is the index of Y
 */
 int distance(Graph* g, int city_x, int city_y) {
+    // Check if the given indices are valid
+    if (city_x < 0 || city_x >= g->n || city_y < 0 || city_y >= g->n) {
+        return -1; // Invalid indices
+    }
+
+    // Use Breadth-First Search to find the shortest path between city_x and city_y
+    int* visited = (int*)calloc(g->n, sizeof(int));
+    int* distance = (int*)malloc(g->n * sizeof(int));
     
+    for (int i = 0; i < g->n; i++) {
+        distance[i] = 2147483647; // Initialize distances to infinity
+    }
+
+    // Initialize BFS queue
+    int* queue = (int*)malloc(g->n * sizeof(int));
+    int front = 0, rear = 0;
+
+    // Start from city_x
+    queue[rear++] = city_x;
+    visited[city_x] = 1;
+    distance[city_x] = 0;
+
+    while (front < rear) {
+        int current_city = queue[front++];
+        
+        for (int i = 0; i < g->n; i++) {
+            if (g->adj[current_city][i] == 1 && !visited[i]) {
+                queue[rear++] = i;
+                visited[i] = 1;
+                distance[i] = distance[current_city] + 1;
+
+                if (i == city_y) {
+                    // Found the destination city, return the distance
+                    free(visited);
+                    free(queue);
+                    free(distance);
+                    return distance[i];
+                }
+            }
+        }
+    }
+
+    // No path found between city_x and city_y
+    free(visited);
+    free(queue);
+    free(distance);
+    return -1;
 }
 
 /**
@@ -299,7 +391,7 @@ bool maharaja_express(Graph* g, int source) {
 }
 
 int main() {
-    char input_file_path[100] = "/home/postman/disco/testcase_2.txt"; // Can be modified
+    char input_file_path[100] = "/home/postman/disco/testcase_3.txt"; // Can be modified
     Graph* g = create_graph(input_file_path); // Do not modify
     
     // Code to find and print the number of junctions
@@ -333,6 +425,39 @@ int main() {
     // Test find_vital_train_tracks
     int vital_tracks = find_vital_train_tracks(g);
     printf("Number of vital train tracks: %d\n", vital_tracks);
+
+    // Upgrade Railway Stations
+    int* upgrades = upgrade_railway_stations(g);
+
+    // Print the Railway Station Upgrades
+    printf("\nRailway Station Upgrades:\n");
+    int notPossible = 0; // Flag to check if upgrading is not possible
+
+    for (int i = 0; i < g->n; i++) {
+        if (upgrades[i] == -1) {
+            notPossible = 1;
+            break; // Break the loop as soon as we find a station that cannot be upgraded
+        }
+    }
+
+    if (notPossible) {
+        printf("Not possible to upgrade all stations.\n");
+    } else {
+        for (int i = 0; i < g->n; i++) {
+            printf("%s = %s\n", g->station_names[i], upgrades[i] == 0 ? "Restaurant" : "Maintenance depot");
+        }
+    }
+
+    // Test distance between two cities (Q.6)
+    int city_x = 0; // Replace with the index of the source city
+    int city_y = 1; // Replace with the index of the destination city
+    int dist = distance(g, city_x, city_y);
+
+    if (dist != -1) {
+        printf("Distance between %s and %s is %d\n", g->station_names[city_x], g->station_names[city_y], dist);
+    } else {
+        printf("No path between %s and %s\n", g->station_names[city_x], g->station_names[city_y]);
+    }
 
     // Free the memory allocated for the closure matrix
     for (int i = 0; i < g->n; i++) {
