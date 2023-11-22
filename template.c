@@ -157,6 +157,26 @@ int** warshall(Graph* g) {
 */
 int find_impossible_pairs(Graph* g) {
     int** closure = warshall(g); // Do not modify
+
+     int impossible_pairs = 0;
+
+    // Count the pairs with no connection in the closure matrix
+    for (int i = 0; i < g->n; i++) {
+        for (int j = i + 1; j < g->n; j++) {
+            // Check if there is no connection in both directions
+            if (closure[i][j] == 0 && closure[j][i] == 0) {
+                impossible_pairs++;
+            }
+        }
+    }
+
+    // Free the memory allocated for the closure matrix
+    for (int i = 0; i < g->n; i++) {
+        free(closure[i]);
+    }
+    free(closure);
+
+    return impossible_pairs;
     
 }
 
@@ -164,8 +184,66 @@ int find_impossible_pairs(Graph* g) {
  * Q.4
  * Return the number of vital train tracks.
 */
+
+/**
+ * Helper function to perform Depth-First Search (DFS) to check connectivity.
+ */
+void dfs(int** adj, int n, bool* visited, int start) {
+    visited[start] = true;
+    for (int i = 0; i < n; i++) {
+        if (adj[start][i] && !visited[i]) {
+            dfs(adj, n, visited, i);
+        }
+    }
+}
+
+/**
+ * Helper function to count the number of connected components in the graph.
+ */
+int count_connected_components(Graph* g) {
+    int components = 0;
+    bool* visited = calloc(g->n, sizeof(bool));
+
+    for (int i = 0; i < g->n; i++) {
+        if (!visited[i]) {
+            dfs(g->adj, g->n, visited, i);
+            components++;
+        }
+    }
+
+    free(visited);
+    return components;
+}
+
+
 int find_vital_train_tracks(Graph* g) {
-    
+    int initial_components = count_connected_components(g);
+
+    int vital_tracks = 0;
+
+    for (int i = 0; i < g->n; i++) {
+        for (int j = i + 1; j < g->n; j++) {
+            if (g->adj[i][j] == 1) {
+                // Temporarily remove the edge
+                g->adj[i][j] = 0;
+                g->adj[j][i] = 0;
+
+                // Check the number of connected components
+                int current_components = count_connected_components(g);
+
+                // Count the vital edge if the number of components increases
+                if (current_components > initial_components) {
+                    vital_tracks++;
+                }
+
+                // Restore the removed edge
+                g->adj[i][j] = 1;
+                g->adj[j][i] = 1;
+            }
+        }
+    }
+
+    return vital_tracks;
 }
 
 /**
@@ -221,7 +299,7 @@ bool maharaja_express(Graph* g, int source) {
 }
 
 int main() {
-    char input_file_path[100] = "/home/postman/disco/testcase_3.txt"; // Can be modified
+    char input_file_path[100] = "/home/postman/disco/testcase_2.txt"; // Can be modified
     Graph* g = create_graph(input_file_path); // Do not modify
     
     // Code to find and print the number of junctions
@@ -247,6 +325,14 @@ int main() {
         }
         printf("\n");
     }
+
+    // Test find_impossible_pairs
+    int impossible_pairs = find_impossible_pairs(g);
+    printf("Number of impossible pairs: %d\n", impossible_pairs);
+
+    // Test find_vital_train_tracks
+    int vital_tracks = find_vital_train_tracks(g);
+    printf("Number of vital train tracks: %d\n", vital_tracks);
 
     // Free the memory allocated for the closure matrix
     for (int i = 0; i < g->n; i++) {
