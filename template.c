@@ -367,14 +367,64 @@ int distance(Graph* g, int city_x, int city_y) {
  * Return the index of any one possible railway capital in the network
 */
 int railway_capital(Graph* g) {
-    
+    // Using Floyd-Warshall algorithm to compute all-pairs shortest paths
+    for (int k = 0; k < g->n; k++) {
+        for (int i = 0; i < g->n; i++) {
+            for (int j = 0; j < g->n; j++) {
+                if (g->adj[i][k] && g->adj[k][j]) {
+                    if (!g->adj[i][j] || g->adj[i][j] > g->adj[i][k] + g->adj[k][j]) {
+                        g->adj[i][j] = g->adj[i][k] + g->adj[k][j];
+                    }
+                }
+            }
+        }
+    }
+
+    int min_sum = 2147483647; // Initialize with a large value
+    int railway_capital_index = -1;
+
+    // Iterate through each city and calculate the sum of distances
+    for (int i = 0; i < g->n; i++) {
+        int sum = 0;
+        for (int j = 0; j < g->n; j++) {
+            if (i != j) {
+                sum += g->adj[i][j];
+            }
+        }
+        // Update the railway capital if the sum is smaller
+        if (sum < min_sum) {
+            min_sum = sum;
+            railway_capital_index = i;
+        }
+    }
+
+    return railway_capital_index;
 }
 
 /**
  * Helper function for Q.8
 */
 bool maharaja_express_tour(Graph* g, int source, int current_city, int previous_city, int* visited) {
-    
+    visited[current_city] = 1;
+
+    for (int i = 0; i < g->n; i++) {
+        if (g->adj[current_city][i] == 1) {
+            // Check if the adjacent city is not visited and is not the previous city
+            if (!visited[i] && i != previous_city) {
+                // Recursively explore the next city
+                if (maharaja_express_tour(g, source, i, current_city, visited)) {
+                    return true;
+                }
+            }
+            // If the adjacent city is visited and is not the source city (indicating a cycle)
+            else if (visited[i] && i == source && i != previous_city) {
+                return true;
+            }
+        }
+    }
+
+    visited[current_city] = 0; // Backtrack
+    return false;
 }
 
 /**
@@ -388,10 +438,11 @@ bool maharaja_express(Graph* g, int source) {
         visited[i] = 0;
     }
     // Hint: Call the helper function and pass the visited array created here.
+    return maharaja_express_tour(g, source, source, -1, visited);
 }
 
 int main() {
-    char input_file_path[100] = "/home/postman/disco/testcase_3.txt"; // Can be modified
+    char input_file_path[100] = "/home/postman/disco/testcase_1.txt"; // Can be modified
     Graph* g = create_graph(input_file_path); // Do not modify
     
     // Code to find and print the number of junctions
@@ -458,6 +509,14 @@ int main() {
     } else {
         printf("No path between %s and %s\n", g->station_names[city_x], g->station_names[city_y]);
     }
+
+    int capital_index = railway_capital(g);
+    printf("Railway Capital= %s\n", g->station_names[capital_index]);
+
+    // Test Maharaja Express tour
+    int maharaja_source = 5; // Replace with the index of the source city for Maharaja Express tour
+    bool maharaja_possible = maharaja_express(g, maharaja_source);
+    printf("Maharaja Express tour starting from %s = %s\n", g->station_names[maharaja_source], maharaja_possible ? "POSSIBLE" : "IMPOSSIBLE");
 
     // Free the memory allocated for the closure matrix
     for (int i = 0; i < g->n; i++) {
