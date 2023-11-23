@@ -1,11 +1,11 @@
 /**
  * Group ID - 
- * Member 1 Name - 
- * Member 1 BITS ID - 
- * Member 2 Name - 
- * Member 2 BITS ID - 
- * Member 3 Name - 
- * Member 3 BITS ID - 
+ * Member 1 Name - Pranav Deepak Tanna
+ * Member 1 BITS ID - 2021A7PS2685P
+ * Member 2 Name - Nachiket Kandari
+ * Member 2 BITS ID - 2021A7PS2691P
+ * Member 3 Name - Priyansh Patel
+ * Member 3 BITS ID - 2021A7PS2682P
 */
 
 // ---------------------------DO NOT MODIFY (Begin)------------------------------
